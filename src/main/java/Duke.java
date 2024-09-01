@@ -1,6 +1,4 @@
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -24,14 +22,13 @@ public class Duke {
         try {
             FileWriter fw = new FileWriter(f, true);
             String timeDescription = task.getTimeDescription();
-            fw.append(task.getTaskType() + " | " +  (task.isDone ? "1" : "0" + " | ")
-                    + task.description + (timeDescription.isEmpty() ? "" : " | " )
-                    + timeDescription);
-        } catch (IOException e)  {
-            System.out.println("File write permission error.");
+            fw.append(task.getTaskType()).append(" | ").append(task.isDone ? "1" : "0").append(" | ").append(task.description).append(timeDescription.isEmpty() ? "" : " | " + timeDescription).append("\n");
+            fw.close();
+        } catch (IOException e) {
+            System.err.println("File write permission error.");
         }
-
     }
+
 
     public static void addToList(String dialog) {
         Task task = Task.of(dialog);
@@ -75,8 +72,34 @@ public class Duke {
         );
     }
 
+    public static void removeLineAt(int index, String path) {
+        File inputFile = new File(path);
+        File tempFile = new File(path.replace("duke.txt", "tmp.txt"));
+
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+            int lineIndexToRemove = index;
+            String currentLine;
+
+            while((currentLine = reader.readLine()) != null) {
+                String trimmedLine = currentLine.trim();
+                if(index++ == lineIndexToRemove) continue;
+                writer.write(currentLine + System.getProperty("line.separator"));
+            }
+            writer.close();
+            reader.close();
+            tempFile.renameTo(inputFile);
+        } catch (FileNotFoundException e) {
+            System.err.println(e.getMessage());
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+    }
+
     public static void delete(int index) {
         Task task = taskList.remove(index - 1);
+        removeLineAt(index - 1, "./data/duke.txt");
         System.out.println(
                 addHorizontalLinesAndIndentation(
                         String.format("Noted. I've removed this task:\n"
@@ -88,19 +111,27 @@ public class Duke {
 
     public static void initializeTaskListFromFile(String path) {
         File f = new File(path);
-        if (!f.exists() || f.isDirectory()) {
+        if (!f.exists()) {
             try {
+                f.getParentFile().mkdirs(); // Ensure the directory exists
                 f.createNewFile();
             } catch (IOException e) {
                 System.out.println("Error! File writing access is not granted!");
             }
             return;
         }
-        Scanner sc = new Scanner(path);
-        while (sc.hasNextLine()) {
-            taskList.add(Task.fromFile(sc.nextLine()));
+
+        try {
+            Scanner sc = new Scanner(f);
+            while (sc.hasNextLine()) {
+                taskList.add(Task.fromFile(sc.nextLine()));
+            }
+            sc.close();
+        } catch (FileNotFoundException e) {
+            System.err.println("Error! File is not found!");
         }
     }
+
 
     public static void main(String[] args) {
         String hi = "Hello! I'm Foo\n" +
@@ -128,9 +159,9 @@ public class Duke {
                     addToList(line);
                 }
             } catch (DukeException e) {
-                System.out.println(addHorizontalLinesAndIndentation("BRUH... " + e.getMessage()));
+                System.err.println(addHorizontalLinesAndIndentation("BRUH... " + e.getMessage()));
             } catch (Exception e) {
-                System.out.println(addHorizontalLinesAndIndentation("An unexpected error occurred."));
+                System.err.println(addHorizontalLinesAndIndentation("An unexpected error occurred."));
             }
         }
         System.out.println(addHorizontalLinesAndIndentation("Bye. Hope to see you again soon!"));

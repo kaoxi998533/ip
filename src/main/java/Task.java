@@ -20,40 +20,42 @@ public abstract class Task {
             throw new NoInputException();
         }
 
-        String[] parts = s.split(" | ", 4);
-        String command = parts[0].toLowerCase();
+        String[] parts = s.split(" \\| ");
+        if (parts.length < 3) {
+            throw new FormatException("Invalid file format.");
+        }
 
-        if (command.equals("todo")) {
-            if (parts.length < 2 || parts[1].trim().isEmpty()) {
+        String taskType = parts[0];
+        boolean isDone = parts[1].equals("1");
+        String description = parts[2];
+
+        switch (taskType) {
+            case "T":
+                Todo todo = new Todo(description);
+                todo.setIsDone(isDone);
+                return todo;
+
+            case "D":
+                if (parts.length < 4) {
+                    throw new FormatException("deadline");
+                }
+                Deadline deadline = new Deadline(description, parts[3]);
+                deadline.setIsDone(isDone);
+                return deadline;
+
+            case "E":
+                if (parts.length < 5) {
+                    throw new FormatException("event");
+                }
+                Event event = new Event(description, parts[3], parts[4]);
+                event.setIsDone(isDone);
+                return event;
+
+            default:
                 throw new NoInputException();
-            }
-            return new Todo(parts[1].trim());
-
-        } else if (command.equals("deadline")) {
-            Pattern deadlinePattern = Pattern.compile("(.+) /by (.+)");
-            Matcher deadlineMatcher = deadlinePattern.matcher(parts[1]);
-            if (!deadlineMatcher.matches()) {
-                throw new FormatException("deadline");
-            }
-            String description = deadlineMatcher.group(1).trim();
-            String by = deadlineMatcher.group(2).trim();
-            return new Deadline(description, by);
-
-        } else if (command.equals("event")) {
-            Pattern eventPattern = Pattern.compile("(.+) /from (.+) /to (.+)");
-            Matcher eventMatcher = eventPattern.matcher(parts[1]);
-            if (!eventMatcher.matches()) {
-                throw new FormatException("event");
-            }
-            String description = eventMatcher.group(1).trim();
-            String from = eventMatcher.group(2).trim();
-            String to = eventMatcher.group(3).trim();
-            return new Event(description, from, to);
-
-        } else {
-            throw new NoInputException();
         }
     }
+
 
 
     public static Task of(String s) throws DukeException {
@@ -180,7 +182,7 @@ public abstract class Task {
 
         @Override
         public String toString() {
-            return String.format("[T][%s] %s (from: %s to: %s)",
+            return String.format("[E][%s] %s (from: %s to: %s)",
                     super.getStatusIcon(), super.description, from, to);
         }
     }
