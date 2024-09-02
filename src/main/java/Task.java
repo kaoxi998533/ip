@@ -1,3 +1,6 @@
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -88,8 +91,14 @@ public class Task {
 
         @Override
         public String toString() {
+            String printedBy = "";
+            try {
+                printedBy = LocalDate.parse(by).format(DateTimeFormatter.ofPattern("MMM d yyyy"));
+            } catch (DateTimeParseException e) {
+                printedBy = by;
+            }
             return String.format("[D][%s] %s (by: %s)",
-                    super.getStatusIcon(), super.description, by);
+                    super.getStatusIcon(), super.description, printedBy);
         }
     }
 
@@ -104,8 +113,22 @@ public class Task {
 
         @Override
         public String toString() {
+            String printedFrom = "";
+            String printedTo = "";
+            try {
+                printedFrom = LocalDate.parse(from)
+                        .format(DateTimeFormatter.ofPattern("MMM d yyyy"));
+            } catch (DateTimeParseException e) {
+                printedFrom = LocalDate.parse(from).toString();
+            }
+            try {
+                printedTo = LocalDate.parse(to)
+                        .format(DateTimeFormatter.ofPattern("MMM d yyyy"));
+            } catch (DateTimeParseException e) {
+                printedTo = LocalDate.parse(to).toString();
+            }
             return String.format("[T][%s] %s (from: %s to: %s)",
-                    super.getStatusIcon(), super.description, from, to);
+                    super.getStatusIcon(), super.description, printedFrom, printedTo);
         }
     }
 }
